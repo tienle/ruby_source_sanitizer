@@ -1,8 +1,7 @@
 # RubySourceSanitizer
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/ruby_source_sanitizer`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+Just simply sanitize a ruby source code by parsing the source into S-Exp (AST).
+I used it for filtering out harmful Ruby code while evaluating an external source. Eg. `eval(sanitize(any_ruby_source))`
 
 ## Installation
 
@@ -22,7 +21,48 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+Define a sanitizer with your custom rules.
+
+```ruby
+
+class MySanitizer < RubySourceSanitizer
+  permit(:block)
+  permit(:defn)
+  permit(:call)
+  permit(:args)
+  permit(:return)
+  permit(:str)
+
+  # Only allow to call these methods
+  def rewrite_call(exp)
+    return nil unless [:visit, :root_path].include?(exp[2])
+    exp
+  end
+end
+
+code = <<-RUBY
+  def test(a)
+    return "foo"
+  end
+
+  visit root_path
+  click "Button"
+RUBY
+
+result = MySanitizer.new.sanitize(code)
+
+puts result
+
+# It will produce this result:
+#
+# def test(a)
+#   return "foo"
+# end
+#
+# visit(root_path)
+
+```
+
 
 ## Development
 
@@ -38,4 +78,3 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/[USERN
 ## License
 
 The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
-
